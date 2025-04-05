@@ -1,6 +1,11 @@
-## XXXXX Project by :  
-  
+## Smart Weather Station Project by :  
+Ofek Buganim & Keren Ma'avari & Lidor Dadon
+Group #: 8
+
 ## Details about the project
+This project is a Smart Weather Station consisting of two units:
+- An outdoor sensor unit that measures real-time environmental data: temperature, humidity, solar radiation, and optionally wind speed, wind direction, and barometric pressure.
+- An indoor display unit that shows data from the outdoor station, possibly including indoor temperature and humidity, trends, and alerts.
  
 ## Folder description :
 * ESP32: source code for the esp side (firmware).
