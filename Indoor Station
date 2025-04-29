@@ -1,0 +1,76 @@
+/*
+VCC	- 3.3V
+GND - GND	Common ground
+CS (TFT) - GPIO 15
+RESET	TFT - GPIO 4
+DC / RS	TFT - GPIO 2
+SDI / MOSI - GPIO 23
+SCK - GPIO 18
+LED - 3.3V
+SDO / MISO - GPIO 19	For SD card or touchscreen readback
+T_CS (Touch) - GPIO 21
+SD_CS (SD card) - GPIO 5
+*/
+
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_ILI9341.h>
+#include "DHT.h"
+
+// Define pins for ESP32
+#define TFT_CS    15
+#define TFT_DC    2
+#define TFT_RST   22  // Or -1 if you connect RESET to ESP32's EN pin
+
+// Declare the tft object globally
+Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, 23, 18, TFT_RST, 19);
+
+// Pin where the DHT11 is connected
+#define DHTPIN 4       // GPIO 4
+#define DHTTYPE DHT11  // DHT 11
+
+DHT dht(DHTPIN, DHTTYPE);
+
+
+void setup() {
+  tft.begin();
+  tft.setRotation(1);
+  tft.fillScreen(ILI9341_BLACK);
+  tft.setTextSize(2);
+  tft.setTextColor(ILI9341_WHITE);
+  dht.begin();
+
+  tft.setCursor(20, 40);
+  tft.println("Indoor Station \n");
+}
+
+void loop() {
+  delay(2000);  // DHT11 needs about 2 seconds between readings
+
+  float humidity = dht.readHumidity();
+  float temperature = dht.readTemperature(); // Celsius by default
+
+  tft.fillRect(0, 60, 240, 100, ILI9341_BLACK); // Clear old values
+
+  tft.setCursor(20, 60);
+  if (isnan(humidity) || isnan(temperature)) {
+    tft.setTextColor(ILI9341_RED);
+    tft.println("Sensor error!");
+    return;
+  }
+
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setCursor(20, 70);
+  tft.print("Humidity: ");
+  tft.print(humidity);
+  tft.println(" %");
+
+  tft.setCursor(20, 90);
+  tft.print("Temp: ");
+  tft.print(temperature);
+  tft.println(" C");
+  if (temperature > 30) {
+      tft.setCursor(20, 110);
+      tft.print("Too Hot!! ");
+  }
+}
