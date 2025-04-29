@@ -1,0 +1,34 @@
+#include <esp_now.h>
+#include <WiFi.h>
+
+// Data structure to receive
+typedef struct struct_message {
+  float temperature;
+  float humidity;
+} struct_message;
+
+struct_message receivedData;
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("ESP-NOW initialization failed!");
+    return;
+  }
+
+  // Callback when data is received
+  esp_now_register_recv_cb([](const uint8_t * mac, const uint8_t *incomingData, int len) {
+    memcpy(&receivedData, incomingData, sizeof(receivedData));
+    Serial.print("Received → Temp: ");
+    Serial.print(receivedData.temperature);
+    Serial.print("°C | Humidity: ");
+    Serial.print(receivedData.humidity);
+    Serial.println("%");
+  });
+}
+
+void loop() {
+  // Do nothing – data is received via callback
+}
