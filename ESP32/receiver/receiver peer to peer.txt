@@ -1,34 +1,56 @@
+/*
+  Rui Santos & Sara Santos - Random Nerd Tutorials
+  Cleaned version: ESP32 as ESP-NOW receiver only (no web server)
+*/
+
 #include <esp_now.h>
 #include <WiFi.h>
 
-// Data structure to receive
+// Structure to receive data (must match sender)
 typedef struct struct_message {
-  float temperature;
-  float humidity;
+  int id;
+  float temp;
+  float hum;
+  unsigned int readingId;
 } struct_message;
 
-struct_message receivedData;
+struct_message incomingReadings;
+
+// Callback when data is received
+void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) {
+  char macStr[18];
+  snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+           mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+  Serial.print("Packet received from: ");
+  Serial.println(macStr);
+
+  memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
+
+  Serial.printf("Board ID %u: %u bytes\n", incomingReadings.id, len);
+  Serial.printf("t value: %4.2f \n", incomingReadings.temp);
+  Serial.printf("h value: %4.2f \n", incomingReadings.hum);
+  Serial.printf("readingID value: %d \n", incomingReadings.readingId);
+  Serial.println();
+}
 
 void setup() {
   Serial.begin(115200);
-  WiFi.mode(WIFI_STA);
 
+  // Set device to Station mode
+  WiFi.mode(WIFI_STA);
+  Serial.print("ESP32 MAC Address: ");
+  Serial.println(WiFi.macAddress());
+
+  // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
-    Serial.println("ESP-NOW initialization failed!");
+    Serial.println("Error initializing ESP-NOW");
     return;
   }
 
-  // Callback when data is received
-  esp_now_register_recv_cb([](const uint8_t * mac, const uint8_t *incomingData, int len) {
-    memcpy(&receivedData, incomingData, sizeof(receivedData));
-    Serial.print("Received → Temp: ");
-    Serial.print(receivedData.temperature);
-    Serial.print("°C | Humidity: ");
-    Serial.print(receivedData.humidity);
-    Serial.println("%");
-  });
+  // Register receive callback
+  esp_now_register_recv_cb(OnDataRecv);
 }
 
 void loop() {
-  // Do nothing – data is received via callback
+  // Nothing needed here for receiver
 }
