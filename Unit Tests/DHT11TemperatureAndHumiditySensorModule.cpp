@@ -1,3 +1,10 @@
+/*
+ *  DHT11 Sensor                  ESP32 DevKit v1
+ *   S (left) ------------------>  GPIO 4
+ *   Middle (VCC) -------------->  3.3V
+ *   - (right) ----------------->  GND
+ */
+
 #include "DHT.h"
 
 // Pin where the DHT11 is connected
