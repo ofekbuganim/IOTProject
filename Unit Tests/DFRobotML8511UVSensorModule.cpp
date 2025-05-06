@@ -1,3 +1,10 @@
+/*
+ *  ML8511 Sensor                  ESP32 DevKit v1
+ *   +  (VCC) ------------------->  3V3
+ *   -  (GND) ------------------->  GND
+ *   A  (Analog Output) --------->  GPIO34
+ */
+
 #define UV_SENSOR_PIN 34  // D connected to A
 
 void setup() {
