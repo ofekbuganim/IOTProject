@@ -8,10 +8,13 @@
 
 // Structure to receive data (must match sender)
 typedef struct struct_message {
-  int id;
   float temp;
   float hum;
   unsigned int readingId;
+  float windSpeed;
+  float pressure;
+  float altitude;
+  float uvIndex;
 } struct_message;
 
 struct_message incomingReadings;
@@ -26,10 +29,13 @@ void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) 
 
   memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
 
-  Serial.printf("Board ID %u: %u bytes\n", incomingReadings.id, len);
   Serial.printf("t value: %4.2f \n", incomingReadings.temp);
   Serial.printf("h value: %4.2f \n", incomingReadings.hum);
   Serial.printf("readingID value: %d \n", incomingReadings.readingId);
+  Serial.printf("windSpeed value: %4.2f \n", incomingReadings.windSpeed);
+  Serial.printf("pressure value: %4.2f \n", incomingReadings.pressure);  
+  Serial.printf("altitude value: %4.2f \n", incomingReadings.altitude);
+  Serial.printf("uvIndex value: %4.2f \n", incomingReadings.uvIndex); 
   Serial.println();
 }
 
