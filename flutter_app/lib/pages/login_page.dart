@@ -16,7 +16,7 @@ class _LoginPageState extends State<LoginPage> {
     final password = passwordController.text;
 
     if (username == "admin" && password == "1234") {
-      Navigator.pushReplacementNamed(context, '/realtime');
+      Navigator.pushReplacementNamed(context, '/home');
     } else {
       showDialog(
         context: context,
