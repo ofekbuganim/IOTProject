@@ -131,7 +131,7 @@ void loop() {
        return;
      }
      delay(500);
-     outgoingReadings.pressure = bmp.readPressure() / 100.0F; // hPa
+     outgoingReadings.pressure = (bmp.readPressure() / 100.0F) / 1013.25; // atm
      outgoingReadings.altitude = bmp.readAltitude(SEALEVELPRESSURE_HPA);
    }
   //bmp-section
