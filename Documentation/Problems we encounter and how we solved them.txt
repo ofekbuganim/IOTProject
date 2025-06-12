@@ -1,0 +1,11 @@
+Problem: When opening the app, the time the app shows for the last update is the time the app was opened and not the time the last update was performed before opening the app
+Solution: During app initialization, the global variable that stores the time of the last update was overwritten by calling dummy providers, and therefore we would receive the time the app was opened. What we did was basically use different conditions to try to understand which of the data the app receives is dummy data and which is real data from the sensors. As soon as we were able to find the difference, we solved the problem.
+
+Problem: On the forecast and history pages, the tables looked bad: the presentation of the data on the tables was uneven, and the axis system was poorly designed.
+Solution: Careful work together with chatgpt to arrange all the tables, the main problem being that if the information accumulated, then its compression in the table would be done sloppily and unpleasantly, so it required a lot of hard and long work to deal with these edge cases.
+
+Problem: Using an API to read a weather forecast and adapt it to the graphs in which we wanted them to be displayed
+Solution: Extensive testing of several APIs until we found something that seemed most correct and good for our use: we wanted an API that would update every few hours, that would tell a forecast for several consecutive days, and that would be easy to work with and arrange the data in the right tables.
+
+Problem: Multiple problems using the alerts we created, such as overwriting one alert with another, problems connecting real-time data with the threshold of each alert, displaying alerts on all pages, and setting a minimum time between an alert and another alert of the same type.
+Solution: Careful work with chatgpt to achieve the desired result, plus understanding the code and fixing it manually.
