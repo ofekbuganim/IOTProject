@@ -4,8 +4,8 @@ Group #: 8
 
 ## Details about the project
 This project is a Smart Weather Station consisting of two units:
-- An outdoor sensor unit that measures real-time environmental data: temperature, humidity, solar radiation, and optionally wind speed, wind direction, and barometric pressure.
-- An indoor display unit that shows data from the outdoor station, possibly including indoor temperature and humidity, trends, and alerts.
+- An outdoor sensor unit that measures real-time environmental data: temperature, humidity, UV index, optionally wind speed, barometric pressure and altitude.
+- An indoor display unit that shows data from the outdoor station, including indoor temperature and humidity.
  
 ## Folder description :
 * ESP32: source code for the esp side (firmware).
@@ -23,6 +23,7 @@ This project is a Smart Weather Station consisting of two units:
 * XXXX - version XXXXX
 
 ## Connection diagram:
+<img width="240" alt="six" src="https://github.com/user-attachments/assets/202ffd14-0242-4ebd-8fc8-873fdfc48b05" />
 
 ## Project Poster:
  
