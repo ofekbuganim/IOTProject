@@ -8,12 +8,11 @@ This project is a Smart Weather Station consisting of two units:
 - An indoor display unit that shows data from the outdoor station, including indoor temperature and humidity.
  
 ## Folder description :
+* Documentation: Problems we encounter and how we overcame them and connection diagram.
 * ESP32: source code for the esp side (firmware).
-* Documentation: wiring diagram + basic operating instructions
 * Unit Tests: tests for individual hardware components (input / output devices)
 * flutter_app : dart code for our Flutter app.
-* Parameters: contains description of parameters and settings that can be modified IN YOUR CODE
-* Assets: link to 3D printed parts, Audio files used in this project, Fritzing file for connection diagram (FZZ format) etc
+* Milestones: We will track and document our project progress on a weekly basis.
 
 
 ## Connection diagram:
