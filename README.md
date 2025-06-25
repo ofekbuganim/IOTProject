@@ -15,17 +15,12 @@ This project is a Smart Weather Station consisting of two units:
 * Parameters: contains description of parameters and settings that can be modified IN YOUR CODE
 * Assets: link to 3D printed parts, Audio files used in this project, Fritzing file for connection diagram (FZZ format) etc
 
-## ESP32 SDK version used in this project: 
-
-## Arduino/ESP32 libraries used in this project:
-* XXXX - version XXXXX
-* XXXX - version XXXXX
-* XXXX - version XXXXX
 
 ## Connection diagram:
 <img width="240" alt="six" src="https://github.com/user-attachments/assets/202ffd14-0242-4ebd-8fc8-873fdfc48b05" />
 
 ## Project Poster:
- 
+ [8 Smart Weather Station IOT.pdf](https://github.com/user-attachments/files/20903983/8.Smart.Weather.Station.IOT.pdf)
+
 This project is part of ICST - The Interdisciplinary Center for Smart Technologies, Taub Faculty of Computer Science, Technion
 https://icst.cs.technion.ac.il/
