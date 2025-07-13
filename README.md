@@ -44,7 +44,7 @@ This project is a **Smart Weather Station** composed of multiple components work
 | `ESP32/`         | Source code (firmware) for the ESP32 units – indoor and outdoor stations. |
 | `Unit_Tests/`    | Hardware test scripts for individual sensors and components (e.g., DHT11, UV sensor, Firebase). |
 | `flutter_app/`   | Flutter mobile application code written in Dart – includes real-time view, charts, forecasts, alerts, and settings. |
-| `Milestones/`    | Weekly progress logs and tracking of development milestones throughout the project timeline. |
+| `Weekly progress/`    | Weekly progress logs and tracking of development milestones throughout the project timeline. |
 
 ---
 
