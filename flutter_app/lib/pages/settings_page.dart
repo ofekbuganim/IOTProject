@@ -9,6 +9,14 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
+String getUvRiskLevel(double uv) {
+  if (uv <= 2) return "Low";
+  if (uv <= 5) return "Moderate";
+  if (uv <= 7) return "High";
+  if (uv <= 10) return "Very High";
+  return "Extreme";
+}
+
 class _SettingsPageState extends State<SettingsPage> {
   bool tempAlert = false;
   bool humidityAlert = false;
@@ -20,6 +28,8 @@ class _SettingsPageState extends State<SettingsPage> {
   double humidityThreshold = 80.0;
   double windThreshold = 15.0;
   double uvThreshold = 7.0;
+
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -40,6 +50,9 @@ class _SettingsPageState extends State<SettingsPage> {
       humidityThreshold = prefs.getDouble('humidityThreshold') ?? 80.0;
       windThreshold = prefs.getDouble('windThreshold') ?? 15.0;
       uvThreshold = prefs.getDouble('uvThreshold') ?? 7.0;
+
+      _isLoading = false;
+
     });
   }
 
@@ -79,7 +92,31 @@ class _SettingsPageState extends State<SettingsPage> {
             savePrefs();
           },
         ),
-        Text("${label.split(" ").last} Threshold: ${value.toStringAsFixed(1)}$unit"),
+        if (label.contains("UV")) ...[
+          Row(
+            children: [
+              Text("Alert Threshold: ${value.toStringAsFixed(1)}"),
+              const SizedBox(width: 10),
+              Text(
+                "(${getUvRiskLevel(value)})",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: value <= 2
+                      ? Colors.green
+                      : value <= 5
+                      ? Colors.yellow[700]
+                      : value <= 7
+                      ? Colors.orange
+                      : Colors.red,
+                ),
+              ),
+            ],
+          ),
+        ] else ...[
+          Text(
+            "${label.split(" ").last} Threshold: ${value.toStringAsFixed(1)}$unit",
+          ),
+        ],
         Slider(
           value: value,
           min: min,
@@ -101,6 +138,11 @@ class _SettingsPageState extends State<SettingsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AlertHelper.setContext(context);
     });
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       appBar: AppBar(title: const Text("Settings")),
       body: Padding(

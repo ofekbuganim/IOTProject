@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -12,70 +13,152 @@ class HistoryPage extends StatefulWidget {
   State<HistoryPage> createState() => _HistoryPageState();
 }
 
+bool isFetching = false;
+List<Map<String, dynamic>> lastFetchedSensorData = [];
+
 class _HistoryPageState extends State<HistoryPage> {
+  String getUvRiskLevel(double uv) {
+    if (uv <= 2) return "Low";
+    if (uv <= 5) return "Moderate";
+    if (uv <= 7) return "High";
+    if (uv <= 10) return "Very High";
+    return "Extreme";
+  }
+
   final List<String> chartTypes = [
-    'Temperature Indoor',
-    'Temperature Outdoor',
-    'Humidity Indoor',
-    'Humidity Outdoor',
-    'UV Index',
-    'Wind Speed',
-    'Pressure',
-    'Altitude',
+    'Temperature Indoor (°C)',
+    'Temperature Outdoor (°C)',
+    'Humidity Indoor (%)',
+    'Humidity Outdoor (%)',
+    'UV Index (UV)',
+    'Wind Speed (km/s)',
+    'Pressure (atm)',
+    'Altitude (m)',
   ];
-  String selectedChart = 'Temperature Indoor';
+
+  final Map<String, String> yAxisUnits = {
+    'Temperature Indoor': '°C',
+    'Temperature Outdoor': '°C',
+    'Humidity Indoor': '%',
+    'Humidity Outdoor': '%',
+    'UV Index': 'UV',
+    'Wind Speed': 'km/s',
+    'Pressure': 'atm',
+    'Altitude': 'm',
+  };
+
+  String selectedChart = 'Temperature Indoor (°C)';
 
   List<Map<String, dynamic>> sensorData = [];
+  bool isLoading = true;
+  bool hasInternet = true;
+  bool isStationConnected = true; // later connect it to your real disconnection flag
+  bool isCheckingConnectivity = true;
+  //bool isFetching = false;
 
   @override
   void initState() {
     super.initState();
+
+    // 🔌 Check initial connectivity once on startup
+    Connectivity().checkConnectivity().then((result) {
+      final hasConnection = result != ConnectivityResult.none;
+      setState(() {
+        hasInternet = hasConnection;
+        isCheckingConnectivity = false;
+      });
+    });
+
+    // 🔄 Start fetch and listen for changes
     fetchSensorData();
+
+    Connectivity().onConnectivityChanged.listen((result) {
+      final hasConnection = result != ConnectivityResult.none;
+      setState(() {
+        hasInternet = hasConnection;
+      });
+      if (hasConnection) {
+        fetchSensorData();
+      }
+    });
   }
 
   Future<void> fetchSensorData() async {
-    final now = DateTime.now();
-    final oneDayAgo = now.subtract(const Duration(hours: 24));
-
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('sensor_data')
-        .orderBy('timestamp')
-        .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(oneDayAgo))
-        .get();
-
-    // Group by minute (keep one entry per minute)
-    final grouped = <String, Map<String, dynamic>>{};
-    for (var doc in querySnapshot.docs) {
-      final data = doc.data();
-      final ts = (data['timestamp'] as Timestamp).toDate();
-      final minuteKey = DateFormat('yyyy-MM-dd HH:mm').format(ts);
-      if (!grouped.containsKey(minuteKey)) {
-        grouped[minuteKey] = {
-          'temperature_indoor': (data['temperature_indoor'] ?? 0).toDouble(),
-          'temperature_outdoor': (data['temperature_outdoor'] ?? 0).toDouble(),
-          'humidity_indoor': (data['humidity_indoor'] ?? 0).toDouble(),
-          'humidity_outdoor': (data['humidity_outdoor'] ?? 0).toDouble(),
-          'uv_index': (data['uv_index'] ?? 0).toDouble(),
-          'wind_speed': (data['wind_speed'] ?? 0).toDouble(),
-          'pressure': (data['pressure'] ?? 0).toDouble(),
-          'altitude': (data['altitude'] ?? 0).toDouble(),
-          'timestamp': ts,
-        };
-      }
+    print(isFetching);
+    if (isFetching) {
+      setState(() {
+        sensorData = lastFetchedSensorData;
+        isLoading = false;
+      });
+      return;
     }
-
-
-    // Filter grouped sensor data to only include entries from the last hour
-    final oneHourAgoLocal = DateTime.now().subtract(const Duration(hours: 1));
-    final filteredGrouped = grouped.values.where((entry) {
-      final ts = entry['timestamp'] as DateTime;
-      return ts.isAfter(oneHourAgoLocal);
-    }).toList();
-
+    isFetching = true;
     setState(() {
-      sensorData = filteredGrouped
-        ..sort((a, b) => (a['timestamp'] as DateTime).compareTo(b['timestamp']));
+      isLoading = true; // <-- ADD THIS
     });
+    try {
+      final now = DateTime.now();
+      final oneHourAgo = now.subtract(const Duration(hours: 1));
+
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('sensor_data')
+          .orderBy('timestamp')
+          .where(
+          'timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(oneHourAgo))
+          .get();
+
+      // Group by minute (keep one entry per minute)
+      final grouped = <String, Map<String, dynamic>>{};
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        final ts = (data['timestamp'] as Timestamp).toDate();
+        final minuteKey = DateFormat('yyyy-MM-dd HH').format(ts) + ':' +
+            (ts.minute ~/ 5).toString().padLeft(2, '0');
+        if (!grouped.containsKey(minuteKey)) {
+          grouped[minuteKey] = {
+            'temperature_indoor': (data['temperature_indoor'] ?? 0).toDouble(),
+            'temperature_outdoor': (data['temperature_outdoor'] ?? 0)
+                .toDouble(),
+            'humidity_indoor': (data['humidity_indoor'] ?? 0).toDouble(),
+            'humidity_outdoor': (data['humidity_outdoor'] ?? 0).toDouble(),
+            'uv_index': (data['uv_index'] ?? 0).toDouble(),
+            'wind_speed': (data['wind_speed'] ?? 0).toDouble(),
+            'pressure': (data['pressure'] ?? 0).toDouble(),
+            'altitude': (data['altitude'] ?? 0).toDouble(),
+            'timestamp': ts,
+          };
+        }
+      }
+
+
+      // Filter grouped sensor data to only include entries from the last hour
+      final oneHourAgoLocal = DateTime.now().subtract(const Duration(hours: 1));
+      final filteredGrouped = grouped.values.where((entry) {
+        final ts = entry['timestamp'] as DateTime;
+        return ts.isAfter(oneHourAgoLocal);
+      }).toList();
+
+      if (!mounted) return;
+
+      lastFetchedSensorData = filteredGrouped;
+
+      setState(() {
+        sensorData = lastFetchedSensorData
+          ..sort((a, b) =>
+              (a['timestamp'] as DateTime).compareTo(b['timestamp']));
+        isLoading = false;
+      });
+    } catch (e) {
+      print('❌ Error fetching sensor data: $e');
+      if (!mounted) return;
+      setState(() {
+        sensorData = []; // Set empty so chart shows fallback text
+        isLoading = false;
+      });
+    }
+    finally {
+      isFetching = false; // ✅ allow next fetch
+    }
   }
 
   // (Same imports and class declarations as before...)
@@ -130,9 +213,17 @@ class _HistoryPageState extends State<HistoryPage> {
                     LineChartBarData(
                       spots: spots,
                       isCurved: true,
-                      color: color,
+                      color: Colors.white,
                       barWidth: 2,
-                      dotData: FlDotData(show: true),
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                          radius: 4,
+                          color: Colors.white,
+                          strokeWidth: 1.5,
+                          strokeColor: Colors.blue, // optional: outline
+                        ),
+                      ),
                     ),
                   ],
                   titlesData: FlTitlesData(
@@ -169,9 +260,14 @@ class _HistoryPageState extends State<HistoryPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+            const Text(
+              'Time',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
             const SizedBox(height: 10),
             Text(
-              "🔺 Max: ${maxY.toStringAsFixed(1)}   🔻 Min: ${minY.toStringAsFixed(1)}",
+              "🔺 Max: ${(maxY == 0.0 ? '0.0' : (maxY < 10 ? maxY.toStringAsFixed(2) : maxY.toStringAsFixed(1)))}  🔻 Min: ${(minY == 0.0 ? '0.0' : (minY < 10 ? minY.toStringAsFixed(2) : minY.toStringAsFixed(1)))}",
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],
@@ -186,28 +282,28 @@ class _HistoryPageState extends State<HistoryPage> {
       final data = sensorData[index];
       double y = 0;
       switch (chartType) {
-        case 'Temperature Indoor':
+        case 'Temperature Indoor (°C)':
           y = data['temperature_indoor'];
           break;
-        case 'Temperature Outdoor':
+        case 'Temperature Outdoor (°C)':
           y = data['temperature_outdoor'];
           break;
-        case 'Humidity Indoor':
+        case 'Humidity Indoor (%)':
           y = data['humidity_indoor'];
           break;
-        case 'Humidity Outdoor':
+        case 'Humidity Outdoor (%)':
           y = data['humidity_outdoor'];
           break;
-        case 'UV Index':
+        case 'UV Index (UV)':
           y = data['uv_index'];
           break;
-        case 'Wind Speed':
+        case 'Wind Speed (km/s)':
           y = data['wind_speed'];
           break;
-        case 'Pressure':
+        case 'Pressure (atm)':
           y = data['pressure'];
           break;
-        case 'Altitude':
+        case 'Altitude (m)':
           y = data['altitude'];
           break;
       }
@@ -221,34 +317,50 @@ class _HistoryPageState extends State<HistoryPage> {
       AlertHelper.setContext(context);
     });
     return Scaffold(
-      appBar: AppBar(title: const Text('Sensor History')),
+      appBar: AppBar(
+        title: const Text('Sensor History'),
+        actions: (!isCheckingConnectivity && hasInternet && isStationConnected)
+            ? [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh',
+            onPressed: () {
+              fetchSensorData();
+            },
+          ),
+        ]
+            : [],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            DropdownButton<String>(
-              value: selectedChart,
-              items: chartTypes.map((type) {
-                return DropdownMenuItem<String>(
-                  value: type,
-                  child: Text(type),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedChart = value!;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: buildChart(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DropdownButton<String>(
+                value: selectedChart,
+                items: chartTypes.map((type) {
+                  return DropdownMenuItem<String>(
+                    value: type,
+                    child: Text(type),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedChart = value!;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+              isLoading
+                  ? const Center(child: CircularProgressIndicator()) :
+              buildChart(
                 getChartData(selectedChart),
                 selectedChart,
                 Colors.blue,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

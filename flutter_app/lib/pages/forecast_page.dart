@@ -5,6 +5,8 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 
 class ForecastPage extends StatefulWidget {
   const ForecastPage({Key? key}) : super(key: key);
@@ -12,6 +14,20 @@ class ForecastPage extends StatefulWidget {
   @override
   State<ForecastPage> createState() => _ForecastPageState();
 }
+class City {
+  final String name;
+  final double latitude;
+  final double longitude;
+
+  City(this.name, this.latitude, this.longitude);
+}
+
+final List<City> cities = [
+  City('Tel Aviv', 32.0853, 34.7818),
+  City('Haifa', 32.7940, 34.9896),
+  City('Jerusalem', 31.7683, 35.2137),
+  City('Beer Sheva', 31.2518, 34.7913),
+];
 
 class _ForecastPageState extends State<ForecastPage> {
   final String apiKey = '98aaff816946c128eef6f41d58d2b803';
@@ -24,7 +40,8 @@ class _ForecastPageState extends State<ForecastPage> {
   List<double> pressures = [];
   List<String> timestamps = [];
 
-  bool isLoading = true;
+  City selectedCity = cities[0];
+  bool isLoading = false;
   int hourLimit = 8;
   List<int> availableOptions = [8, 16, 24, 40];
 
@@ -32,17 +49,27 @@ class _ForecastPageState extends State<ForecastPage> {
   void initState() {
     super.initState();
     fetchForecastData();
+
+    // Listen for internet reconnection to retry fetch
+    Connectivity().onConnectivityChanged.listen((result) {
+      if (result != ConnectivityResult.none) {
+        print('📶 Internet reconnected, retrying fetchForecastData');
+        fetchForecastData();
+      }
+    });
   }
 
   Future<void> fetchForecastData() async {
     final url =
-        'https://api.openweathermap.org/data/2.5/forecast?lat=$latitude&lon=$longitude&units=metric&appid=$apiKey';
+        'https://api.openweathermap.org/data/2.5/forecast?lat=${selectedCity.latitude}&lon=${selectedCity.longitude}&units=metric&appid=$apiKey';
 
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final List forecastList = data['list'];
+
+        if (!mounted) return;
 
         setState(() {
           temperatures = forecastList.map<double>((item) => item['main']['temp']?.toDouble() ?? 0.0).toList();
@@ -94,12 +121,19 @@ class _ForecastPageState extends State<ForecastPage> {
     return 1;
   }
 
+  bool get isForecastDataEmpty {
+    return temperatures.isEmpty ||
+        humidities.isEmpty ||
+        windSpeeds.isEmpty ||
+        pressures.isEmpty;
+  }
+
   Widget buildChart(String title, List<double> data, Color color) {
     final limitedData = data.take(hourLimit).toList();
     final limitedLabels = timestamps.take(hourLimit).toList();
 
-    double minY = limitedData.reduce(min);
-    double maxY = limitedData.reduce(max);
+    double minY = data.reduce(min)-1;
+    double maxY = data.reduce(max)+1;
     double interval = getCleanInterval(minY, maxY);
 
     minY = (minY / interval).floor() * interval;
@@ -133,12 +167,12 @@ class _ForecastPageState extends State<ForecastPage> {
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: title == "Pressure" ? 48 : 40,
+                        reservedSize: title == "Pressure (atm)" ? 48 : 40,
                         interval: interval,
                         getTitlesWidget: (value, meta) {
-                          if (title == "Pressure") {
+                          if (title == "Pressure (atm)") {
                             return Text(
-                              '${(value / 1000).toStringAsFixed(3)}k',
+                              '${(value / 1013.25).toStringAsFixed(3)}',
                               style: TextStyle(fontSize: 10),
                             );
                           } else {
@@ -175,6 +209,11 @@ class _ForecastPageState extends State<ForecastPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+            const Text(
+              'Time',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
           ],
         ),
       ),
@@ -209,10 +248,51 @@ class _ForecastPageState extends State<ForecastPage> {
                   );
                 }).toList(),
               ),
-              buildChart('Temperature (°C)', temperatures, Colors.red),
-              buildChart('Humidity (%)', humidities, Colors.blue),
-              buildChart('Wind Speed (m/s)', windSpeeds, Colors.green),
-              buildChart('Pressure (hPa)', pressures, Colors.purple),
+              DropdownButton<City>(
+                value: selectedCity,
+                icon: Icon(Icons.arrow_drop_down),
+                onChanged: (City? newCity) {
+                  if (newCity != null) {
+                    setState(() {
+                      selectedCity = newCity;
+                      hourLimit = 8;
+                      isLoading = true;
+                      // ✅ Clear old data so charts disappear or show spinners
+                      temperatures = [];
+                      humidities = [];
+                      windSpeeds = [];
+                      pressures = [];
+                      timestamps = [];
+                      fetchForecastData(); // Re-fetch with new location
+                    });
+                  }
+                },
+                items: cities.map<DropdownMenuItem<City>>((City city) {
+                  return DropdownMenuItem<City>(
+                    value: city,
+                    child: Text(city.name),
+                  );
+                }).toList(),
+              ),
+              if (isForecastDataEmpty)
+                const SizedBox(
+                  height: 300,
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else ...[
+                buildChart('Temperature (°C)', temperatures, Colors.red),
+                buildChart('Humidity (%)', humidities, Colors.blue),
+                buildChart('Wind Speed (m/s)', windSpeeds, Colors.green),
+                buildChart('Pressure (atm)', pressures, Colors.purple),
+              ],
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Text(
+                  'Forecast data provided by OpenWeatherMap',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ],
           ),
         ),

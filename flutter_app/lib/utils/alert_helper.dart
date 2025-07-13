@@ -98,7 +98,7 @@ class AlertHelper {
             ],
           ),
         ),
-        Future.delayed(const Duration(seconds: 10), () {
+        Future.delayed(const Duration(seconds: 3), () {
           if (Navigator.of(context).canPop()) {
             Navigator.of(context).pop();
           }

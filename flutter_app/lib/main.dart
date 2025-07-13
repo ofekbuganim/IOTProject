@@ -10,6 +10,7 @@ import 'pages/settings_page.dart';
 import 'sensor_data_provider.dart';
 import 'utils/alert_helper.dart';
 import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 /// Handles background messages
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -42,6 +43,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   DateTime? lastReceivedTime;
   bool disconnected = false;
+  bool noInternet = false;
 
   @override
   void initState() {
@@ -91,6 +93,25 @@ class _MyAppState extends State<MyApp> {
         });
       }
     });
+
+    // ✅ Check internet connectivity
+    Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+      final isOffline = result == ConnectivityResult.none;
+      if (isOffline != noInternet) {
+        setState(() {
+          noInternet = isOffline;
+        });
+      }
+    });
+    // ✅ Check current connectivity at startup
+    Connectivity().checkConnectivity().then((ConnectivityResult result) {
+      final isOffline = result == ConnectivityResult.none;
+      if (mounted && isOffline != noInternet) {
+        setState(() {
+          noInternet = isOffline;
+        });
+      }
+    });
   }
 
   Future<void> _loadLastReceivedTime() async {
@@ -106,6 +127,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
       title: 'Smart Weather',
       theme: ThemeData.light(),
@@ -114,7 +136,7 @@ class _MyAppState extends State<MyApp> {
       home: Stack(
         children: [
           const MainNavigation(),
-          if (disconnected)
+          if (disconnected && !noInternet)
             Positioned(
               top: 0,
               left: 0,
@@ -126,12 +148,36 @@ class _MyAppState extends State<MyApp> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                     child: Text(
-                      '❌ Sensor Disconnected — Last update: ${lastReceivedTime?.toLocal().toString().split(".")[0] ?? "unknown"}',
+                      '❌ Indoor Station Disconnected — Last update: ${lastReceivedTime?.toLocal().toString().split(".")[0] ?? "unknown"}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (noInternet)
+            Positioned(
+              top: 30, // Push down if red banner is shown
+              right: 10,
+              child: Material(
+                elevation: 6,
+                color: Colors.transparent,
+                child: Tooltip(
+                  message: 'No Internet Connection',
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    child: const Icon(
+                      Icons.wifi_off,
+                      color: Colors.white,
+                      size: 24,
                     ),
                   ),
                 ),

@@ -138,7 +138,7 @@ class _HomePageState extends State<HomePage> {
       alertsToShow.add({
         'key': 'wind',
         'title': "💨 Wind Alert",
-        'message': "Wind speed is above $windThreshold m/s — be cautious outdoors!"
+        'message': "Wind speed is above $windThreshold km/s — be cautious outdoors!"
       });
     }
 
@@ -205,18 +205,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Live Sensor Data'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.show_chart),
-            tooltip: 'Forecast',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ForecastPage()),
-              );
-            },
-          )
-        ],
+        actions: [], // No actions in the AppBar
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: sensors,
@@ -245,29 +234,31 @@ class _HomePageState extends State<HomePage> {
 
           return Padding(
             padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 buildLine("Temperature Indoor", latest['temperature_indoor'], "°C", "🏠🌡"),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 buildLine("Temperature Outdoor", latest['temperature_outdoor'], "°C", "🌤"),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 buildLine("Humidity Indoor", latest['humidity_indoor'], "%", "🏠💧"),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 buildLine("Humidity Outdoor", latest['humidity_outdoor'], "%", "🌦"),
-                const SizedBox(height: 8),
-                buildLine("Wind Speed", latest['wind_speed'], " m/s", "💨"),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
+                buildLine("Wind Speed", latest['wind_speed'], " km/s", "💨"),
+                const SizedBox(height: 16),
                 Text(
-                  "☀️ UV Index: ${getUvRiskLevel(uvValue)} (${uvValue.toStringAsFixed(1)})",
+                  "☀️ UV level: ${getUvRiskLevel(uvValue)}",
                   style: const TextStyle(fontSize: 20),
                 ),
-                const SizedBox(height: 8),
-                buildLine("Pressure", latest['pressure'], " hPa", "📈"),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
+                buildLine("Pressure", latest['pressure'], " atm", "📈"),
+                const SizedBox(height: 16),
                 buildLine("Altitude", latest['altitude'], " m", "🏔"),
               ],
             ),
+          ),
           );
         },
       ),
