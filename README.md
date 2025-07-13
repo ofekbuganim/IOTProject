@@ -54,7 +54,7 @@ This project is a **Smart Weather Station** composed of multiple components work
 ---
 
 ## 🖼️ Project Poster
-[8 Smart Weather Station IOT.pptx](https://github.com/user-attachments/files/21205364/8.Smart.Weather.Station.IOT.pptx)
+[8.Smart.Weather.Station.IOT.pdf](https://github.com/user-attachments/files/21205365/8.Smart.Weather.Station.IOT.pdf)
 
 
 ---
