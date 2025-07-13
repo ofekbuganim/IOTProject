@@ -10,7 +10,7 @@ This project is a Smart Weather Station consisting of two units:
 ## Folder description :
 * Documentation: Problems we encounter and how we overcame them and connection diagram.
 * ESP32: source code for the esp side (firmware).
-* Unit Tests: tests for individual hardware components (input / output devices)
+* Unit Tests: tests for individual hardware components (input / output devices).
 * flutter_app : dart code for our Flutter app.
 * Milestones: We will track and document our project progress on a weekly basis.
 
