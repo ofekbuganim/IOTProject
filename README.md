@@ -89,10 +89,13 @@ This project is a **Smart Weather Station** composed of multiple components work
 | DHT11 Temperature & Humidity     | 2        | Indoor + Outdoor  | Measures temp/humidity |
 | ML8511 UV Sensor                 | 1        | Outdoor           | UV index via analog |
 | BMP280 Barometric Sensor         | 1        | Outdoor           | Pressure + Altitude |
-| Wind Speed Sensor (MH + motor)   | 1        | Outdoor (optional)| Based on magnetic pulses |
+| Wind Speed Sensor (MH + motor)   | 1        | Outdoor           | Based on magnetic pulses |
 | LCD Screen 20x4 (I2C)            | 1        | Indoor            | Displays all readings |
 | I2C Module for LCD               | 1        | Indoor            | For I2C connection to LCD |
 | Wires, breadboards, resistors    | Many     | Both              | For circuit connections |
+
+---
+
 ## 🔌 Connection Diagram
 <img width="240" alt="six" src="https://github.com/user-attachments/assets/202ffd14-0242-4ebd-8fc8-873fdfc48b05" />
 
