@@ -84,7 +84,6 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Future<void> fetchSensorData() async {
-    print(isFetching);
     if (isFetching) {
       setState(() {
         sensorData = lastFetchedSensorData;
@@ -113,7 +112,7 @@ class _HistoryPageState extends State<HistoryPage> {
         final data = doc.data();
         final ts = (data['timestamp'] as Timestamp).toDate();
         final minuteKey = DateFormat('yyyy-MM-dd HH').format(ts) + ':' +
-            (ts.minute ~/ 5).toString().padLeft(2, '0');
+            (ts.minute ~/ 10).toString().padLeft(2, '0');
         if (!grouped.containsKey(minuteKey)) {
           grouped[minuteKey] = {
             'temperature_indoor': (data['temperature_indoor'] ?? 0).toDouble(),
@@ -232,18 +231,28 @@ class _HistoryPageState extends State<HistoryPage> {
                         showTitles: true,
                         reservedSize: 40,
                         interval: interval,
+                        getTitlesWidget: (value, meta) {
+                          return SideTitleWidget(
+                            axisSide: meta.axisSide,
+                            child: Text(
+                              value.toStringAsFixed(1), // 👈 Always show 1 decimal (e.g. 25.8)
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: (spots.length / 6).floorToDouble().clamp(1, double.infinity),
+                        interval: max(1, (spots.length / 5).floorToDouble()),
                         getTitlesWidget: (value, meta) {
                           int index = value.toInt();
                           if (index >= 0 && index < sensorData.length - 1) {
                             final timestamp = sensorData[index]['timestamp'] as DateTime;
                             return SideTitleWidget(
                               axisSide: meta.axisSide,
+                              space: 8,
                               child: Text(
                                 DateFormat.Hm().format(timestamp),
                                 style: const TextStyle(fontSize: 10),
@@ -295,7 +304,9 @@ class _HistoryPageState extends State<HistoryPage> {
           y = data['humidity_outdoor'];
           break;
         case 'UV Index (UV)':
-          y = data['uv_index'];
+        case 'UV Index (UV)':
+          y = (data['uv_index'] ?? 0).toDouble();
+          if (y.isNaN || y.isInfinite || y < 0) y = 0;
           break;
         case 'Wind Speed (km/s)':
           y = data['wind_speed'];
