@@ -9,3 +9,9 @@ Solution: Extensive testing of several APIs until we found something that seemed
 
 Problem: Multiple problems using the alerts we created, such as overwriting one alert with another, problems connecting real-time data with the threshold of each alert, displaying alerts on all pages, and setting a minimum time between an alert and another alert of the same type.
 Solution: Careful work with chatgpt to achieve the desired result, plus understanding the code and fixing it manually.
+
+Problem: Touchscreen task and web server communication task work in different frequencies and can't be in the same 'loop' function.
+Solution: Split the tasks to 2 different cores on the ESP32. Each core runs in a different frequency.
+
+Problem: ESP-NOW packets are failed to be received in the indoor station.
+Solution: We found out it might caused by momentary RF interference (crowded 2.4 GHz band, microwave, Bluetooth, other Wi-Fi). The next time the outdoor station tried to send the packet was and the next itteration of the loop (4-5 sec) and it added a significant delay and caused other issues. We added 'for' loop inside 'loop' function for trying to send the packet a fixed number of times with delay of 20ms. It decreased the delay significantly.
